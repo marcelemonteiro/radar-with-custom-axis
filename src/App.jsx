@@ -94,7 +94,7 @@ function App() {
       </div>
 
       <div>
-        <label htmlFor="options" style={{ marginRight: "1rem" }}>
+        {/* <label htmlFor="options" style={{ marginRight: "1rem" }}>
           Selecione um item:
         </label>
         <select
@@ -108,7 +108,7 @@ function App() {
           <option value="data3">data3</option>
         </select>
 
-        <p>Você selecionou: {selectedItem}</p>
+        <p>Você selecionou: {selectedItem}</p> */}
 
         <p>Customizar categorias: </p>
         <form
