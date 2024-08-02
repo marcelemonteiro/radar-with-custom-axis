@@ -4,8 +4,10 @@ import {
   VictoryTheme,
   VictoryPolarAxis,
   VictoryArea,
+  VictoryLabel,
 } from "victory";
-import { data1, compdata1, data2, compdata2, data3, compdata3 } from "./data";
+import { data1, compdata1 } from "./data";
+import CustomLabel from "./CustomLabel";
 
 const ALL_CATEGORIES = ["cat", "dog", "bird", "frog", "fish", "cow"];
 
@@ -22,16 +24,6 @@ function App() {
     if (selectedItem === "data1") {
       setCurrentData(data1);
       setComparativeData(compdata1);
-    }
-
-    if (selectedItem === "data2") {
-      setCurrentData(data2);
-      setComparativeData(compdata2);
-    }
-
-    if (selectedItem === "data3") {
-      setCurrentData(data3);
-      setComparativeData(compdata3);
     }
   }, [selectedItem]);
 
@@ -58,7 +50,8 @@ function App() {
                   dependentAxis
                   key={d}
                   label={d}
-                  labelPlacement="perpendicular"
+                  labelPlacement="vertical"
+                  axisLabelComponent={<VictoryLabel />}
                   style={{ tickLabels: { fill: "none" } }}
                   axisValue={d}
                 />
@@ -70,6 +63,22 @@ function App() {
                 data: {
                   fill: "#7f63efcc",
                   stroke: "#7f63ef",
+                  strokeWidth: 2,
+                  strokeLinecap: "round",
+                },
+              }}
+            />
+
+            {/* Gráfico responsável apenas por renderizar as labels do gráfico da média (roxo) */}
+            <VictoryArea
+              data={currentData
+                .filter((data) => categories.includes(data.x))
+                .map(({ y, x }) => ({ y: y * 0.85, x, label: y }))}
+              labels={({ datum }) => datum.y}
+              labelComponent={<CustomLabel />}
+              style={{
+                data: {
+                  fill: "transparent",
                   strokeWidth: 2,
                   strokeLinecap: "round",
                 },
