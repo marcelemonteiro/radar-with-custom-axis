@@ -1,49 +1,62 @@
 import { useEffect, useState } from "react";
-import {
-  VictoryChart,
-  VictoryTheme,
-  VictoryPolarAxis,
-  VictoryArea,
-  VictoryLabel,
-} from "victory";
-import { data1, compdata1 } from "./data";
+import { VictoryChart, VictoryPolarAxis, VictoryArea } from "victory";
 import CustomLabel from "./CustomLabel";
+import { radarData } from "./transformMock";
+import CustomAxisLabel from "./CustomAxisLabel";
 
-const ALL_CATEGORIES = ["cat", "dog", "bird", "frog", "fish", "cow"];
+const ALL_CATEGORIES = Object.keys(radarData);
 
 function App() {
-  const [currentData, setCurrentData] = useState(data1);
-  const [comparativeData, setComparativeData] = useState(compdata1);
-  const [selectedItem, setSelectedItem] = useState("data1");
-  // ou um radar padrão, já com categorias
-  const [categories, setCategories] = useState(["cat", "dog", "bird"]);
-  // ou não exibe o radar e solicita as categorias
-  // const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(Object.keys(radarData));
+  const [userData, setUserData] = useState(null);
+  const [comparativeData, setComparativeData] = useState(null);
 
   useEffect(() => {
-    if (selectedItem === "data1") {
-      setCurrentData(data1);
-      setComparativeData(compdata1);
-    }
-  }, [selectedItem]);
+    const uData = generateUserData(ALL_CATEGORIES, radarData);
+    setUserData(uData);
+
+    const cData = generateCompData(ALL_CATEGORIES, radarData);
+    setComparativeData(cData);
+  }, []);
+
+  function generateUserData(categories, rawData) {
+    return categories.map((cat) => ({
+      x: cat,
+      y: rawData[cat].percentage * 100,
+      label: rawData[cat].number,
+    }));
+  }
+
+  function generateCompData(categories, rawData) {
+    return categories.map((cat) => {
+      const { average, maxValue } = rawData[cat];
+      return { x: cat, y: 100 * (average / (maxValue || 1)) };
+    });
+  }
 
   return (
     <div
       style={{
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
       }}
     >
-      <div style={{ height: "70vh" }}>
-        {categories.length == 0 && (
-          <p>
+      <div
+        style={{
+          width: "60vw",
+          height: "75vh",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        {categories.length < 3 && (
+          <p style={{ padding: 50 }}>
             Por favor, selecione ao menos 3 categorias ao lado para criar o
             radar.{" "}
           </p>
         )}
-        {categories.length > 0 && (
-          <VictoryChart polar theme={VictoryTheme.material}>
+        {categories.length > 2 && userData && (
+          <VictoryChart width={500} polar>
             {categories.map((d) => {
               return (
                 <VictoryPolarAxis
@@ -51,30 +64,60 @@ function App() {
                   key={d}
                   label={d}
                   labelPlacement="vertical"
-                  axisLabelComponent={<VictoryLabel />}
-                  style={{ tickLabels: { fill: "none" } }}
+                  axisLabelComponent={<CustomAxisLabel />}
+                  style={{
+                    tickLabels: { fill: "none" },
+                    axisLabel: {
+                      padding: 15,
+                    },
+
+                    axis: { stroke: "none" },
+
+                    grid: {
+                      stroke: "grey",
+                      strokeWidth: 0.25,
+                      opacity: 0.1,
+                      strokeDasharray: "10, 5",
+                    },
+                  }}
                   axisValue={d}
+                  // domainPadding={10}
                 />
               );
             })}
+
+            <VictoryPolarAxis
+              labelPlacement="parallel"
+              tickFormat={() => ""}
+              style={{
+                axis: { stroke: "none" },
+                grid: {
+                  stroke: "grey",
+                  opacity: 0.9,
+                },
+              }}
+            />
+
             <VictoryArea
-              data={currentData.filter((data) => categories.includes(data.x))}
+              data={userData.filter((data) => categories.includes(data.x))}
               style={{
                 data: {
-                  fill: "#7f63efcc",
+                  fill: "#7f63efaa",
                   stroke: "#7f63ef",
                   strokeWidth: 2,
                   strokeLinecap: "round",
+                },
+                labels: {
+                  fill: "none",
                 },
               }}
             />
 
             {/* Gráfico responsável apenas por renderizar as labels do gráfico da média (roxo) */}
             <VictoryArea
-              data={currentData
+              data={userData
                 .filter((data) => categories.includes(data.x))
-                .map(({ y, x }) => ({ y: y * 0.85, x, label: y }))}
-              labels={({ datum }) => datum.y}
+                .map(({ y, x, label }) => ({ y: y * 0.85, x, label }))}
               labelComponent={<CustomLabel />}
               style={{
                 data: {
@@ -84,13 +127,14 @@ function App() {
                 },
               }}
             />
+
             <VictoryArea
               data={comparativeData.filter((data) =>
                 categories.includes(data.x)
               )}
               style={{
                 data: {
-                  fill: "#c43a3199",
+                  fill: "#c43a31aa",
                   stroke: "#c43a31",
                   strokeWidth: 2,
                   strokeLinecap: "round",
@@ -103,22 +147,6 @@ function App() {
       </div>
 
       <div>
-        {/* <label htmlFor="options" style={{ marginRight: "1rem" }}>
-          Selecione um item:
-        </label>
-        <select
-          id="options"
-          name="options"
-          value={selectedItem}
-          onChange={(e) => setSelectedItem(e.target.value)}
-        >
-          <option value="data1">data1</option>
-          <option value="data2">data2</option>
-          <option value="data3">data3</option>
-        </select>
-
-        <p>Você selecionou: {selectedItem}</p> */}
-
         <p>Customizar categorias: </p>
         <form
           onSubmit={(e) => {
@@ -145,11 +173,22 @@ function App() {
                 type="checkbox"
                 defaultChecked={categories.includes(cat)}
                 value={cat}
+                onChange={(e) => {
+                  console.log(e.target);
+
+                  if (e.target.checked) {
+                    setCategories((prev) => [...prev, e.target.value]);
+                  } else {
+                    const filter = categories.filter(
+                      (cat) => cat != e.target.value
+                    );
+                    setCategories(filter);
+                  }
+                }}
               />
               {cat}{" "}
             </div>
           ))}
-          <button style={{ marginTop: "1rem" }}>Atualizar</button>
         </form>
       </div>
     </div>
